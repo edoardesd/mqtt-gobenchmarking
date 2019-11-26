@@ -1,9 +1,9 @@
 package main
 
 import (
-	//"fmt"
+	"fmt"
 	"log"
-	//"time"
+	"time"
 )
 
 import (
@@ -16,18 +16,25 @@ type Client struct {
 	MsgTopic   string
 	MsgSize    int
 	MsgQoS     byte
+	TopicNum   int
 }
 
 func (c *Client) Run() {
 
 	subscriberOptions := mqtt.NewClientOptions().AddBroker(c.BrokerURL)
 	subscriber := mqtt.NewClient(subscriberOptions)
+	topicName := fmt.Sprintf("topic/%d", c.TopicNum)
 
 	log.Printf("[%d] connecting subscriber\n", c.ClientId)
 
-	if token := subscriber.Connect(); token.WaitTimeout(60) && token.Error() != nil {
-		
-		log.Printf("Connecting error\n", token)
+	if token := subscriber.Connect(); token.WaitTimeout(60* time.Second) && token.Error() != nil {
+
+		return
+	}
+
+	log.Printf("[%d] subscribing to topic %s\n", c.ClientId, topicName)
+	if token := subscriber.Subscribe(topicName, c.MsgQoS, nil); token.WaitTimeout(60* time.Second) && token.Error() != nil {
+		log.Printf("Subscribing error\n", token)
 
 		return
 	}
